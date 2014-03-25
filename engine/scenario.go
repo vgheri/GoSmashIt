@@ -11,9 +11,9 @@ type Scenario struct {
 	total_users int,
 	base_address string,
 	test_duration int, // test duration expressed in seconds
-	pause_duration float64, //length of pause between steps, expressed in seconds (e.g. 2.5)
+	pause_duration int, //length of pause between steps, expressed in milliseconds (e.g. 2500)
 	timeout float64, // amount of milliseconds to wait before considering the request as timed out
-	steps []*Request // the load test execution plan
+	steps []*http.Request // the load test execution plan
 }
 
 func newScenario(users int, url string, testDuration int, pauseDuration float64, timeoutDuration float64, stepsCount int) *Scenario {
@@ -23,7 +23,7 @@ func newScenario(users int, url string, testDuration int, pauseDuration float64,
 		test_duration: testDuration,
 		pause_duration: pauseDuration,
 		timeout: timeoutDuration,
-		steps: make([]*Request, 0, stepsCount)
+		steps: make([]*http.Request, 0, stepsCount)
 	}
 	return s
 }
