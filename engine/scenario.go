@@ -3,53 +3,55 @@ package engine
 import (
 	"bytes"
 	"encoding/base64"
-	"http"
-	"strings"	
+	"net/http"
+	"container/list"
+	"time"
+	"strings"
 )
 
 type Scenario struct {
-	total_users int,
-	base_address string,
-	test_duration int, // test duration expressed in seconds
-	pause_duration int, //length of pause between steps, expressed in milliseconds (e.g. 2500)
-	timeout float64, // amount of milliseconds to wait before considering the request as timed out
-	steps []*http.Request // the load test execution plan
+	total_users int
+	base_address string
+	test_duration time.Duration // test duration 
+	pause_duration time.Duration //length of pause between steps, 
+	timeout time.Duration // amount of time  to wait before considering the request as timed out
+	steps *list.List // the load test execution plan
 }
 
-func newScenario(users int, url string, testDuration int, pauseDuration float64, timeoutDuration float64, stepsCount int) *Scenario {
-	s = &Scenario{
+func newScenario(users int, url string, testDuration time.Duration, pauseDuration time.Duration, timeoutDuration time.Duration) *Scenario {
+	s := &Scenario{
 		total_users: users,
-		url: base_address,
+		base_address: url,
 		test_duration: testDuration,
 		pause_duration: pauseDuration,
 		timeout: timeoutDuration,
-		steps: make([]*http.Request, 0, stepsCount)
+		steps: list.New(),
 	}
 	return s
 }
 
-func (s *Scenario) AddStep(headers map[string][string], method string, endpoint string, content string) (*Scenario, error) {
-	method = ToUpper(method)
-	url = s.base_address + endpoint
-	var req *Request
+func (s *Scenario) AddStep(headers map[string]string, method string, endpoint string, content string) error {
+	method = strings.ToUpper(method)
+	url := s.base_address + endpoint
+	var req *http.Request
 	var err error
-	if content == nil {
+	if len(content) == 0 {
 		req, err = http.NewRequest(method, url, nil)
-	}
-	else {
+	} else {
 		buf := bytes.NewBufferString(content)
 		dec := base64.NewDecoder(base64.StdEncoding, buf)
 		req, err =  http.NewRequest(method, url, dec)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// For each header (if any)
-	if (headers != nil && len(headers) > 0) {
-		//req.Header.Set("Content-Type", bodyType)
+	if headers != nil && len(headers) > 0 {		
 		for k, v := range headers {
 			req.Header.Set(k, v)
 		}
 	}
-	return s, nil	
+	s.steps.PushBack(req)
+	return nil	
 }
+
