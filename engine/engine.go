@@ -199,7 +199,7 @@ func executeAction(channel chan<- *httpActionResult, client *http.Client, req *h
 
 func (e *Engine) createProgressEvent() *ProgressEvent {
 	time_now := time.Now()
-	avg_cu, avg_rt, max_cu := e.computeAverages()
+	avg_cu, avg_rt, max_cu := computeAverages(e.execution_results)
 	event := &ProgressEvent{
 		Time_elapsed:             time_now.Sub(e.start_time),
 		Total_users:              e.users_spawned,
@@ -214,15 +214,15 @@ func (e *Engine) createProgressEvent() *ProgressEvent {
 	return event
 }
 
-func (e *Engine) computeAverages() (float64, float64, int) {
+func computeAverages(execution_results *list.List) (float64, float64, int) {
 	average_concurrent_users, average_response_time := 0.0, 0.0
 	var result *httpActionResult
 	var avg_rt_counter time.Duration
 	max_concurrent_users := 0
 	avg_cu_counter := 0.0
 	counter := 0.0
-	if e.execution_results.Len() > 0 {
-		for elem := e.execution_results.Front(); elem != nil; elem = elem.Next() {
+	if execution_results.Len() > 0 {
+		for elem := execution_results.Front(); elem != nil; elem = elem.Next() {
 			result = elem.Value.(*httpActionResult)
 			avg_cu_counter += float64(result.concurrent_users)
 			if result.concurrent_users > max_concurrent_users {
@@ -235,8 +235,9 @@ func (e *Engine) computeAverages() (float64, float64, int) {
 				counter++
 			}
 		}
-		average_concurrent_users = avg_cu_counter / float64(e.execution_results.Len())
-		average_response_time = float64(avg_rt_counter*time.Millisecond) / counter
+		average_concurrent_users = avg_cu_counter / float64(execution_results.Len())
+		numerator := avg_rt_counter.Seconds() * 1000.0
+		average_response_time = float64(numerator) / counter
 	}
 	return average_concurrent_users, average_response_time,
 		max_concurrent_users
