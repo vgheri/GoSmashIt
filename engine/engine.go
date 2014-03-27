@@ -92,7 +92,7 @@ func (e *Engine) Run() {
 					e.users_spawned++
 					e.current_concurrent_users++
 					// spawn a new user
-					go executeScenario(e.Scenario, e.ch, e.quit, e.current_concurrent_users)
+					go executeScenario(e.Scenario, e.ch, e.quit, e.current_concurrent_users, e.Scenario.pause_duration)
 				} else {
 					e.spawn_ticker.Stop()
 				}
@@ -152,7 +152,7 @@ func (e *Engine) updateStats(result *httpActionResult) {
 	}
 }
 
-func executeScenario(scenario *Scenario, ch chan<- *httpActionResult, quit chan<- int, concurrent_users int) {
+func executeScenario(scenario *Scenario, ch chan<- *httpActionResult, quit chan<- int, concurrent_users int, pause time.Duration) {
 	// Set timeout
 	var myTransport http.RoundTripper = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -166,6 +166,7 @@ func executeScenario(scenario *Scenario, ch chan<- *httpActionResult, quit chan<
 		result := <-internal_chan
 		result.concurrent_users = concurrent_users
 		ch <- result
+		time.Sleep(pause)
 	}
 	// Send a message over the quit channel
 	quit <- 1
