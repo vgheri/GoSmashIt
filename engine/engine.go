@@ -101,21 +101,25 @@ func (e *Engine) Run() {
 				e.External_ch <- evt
 			case <-e.test_completed_ticker.C:
 				test_completed = true
-				e.test_progress_ticker.Stop()
-				e.test_completed_ticker.Stop()
-				e.spawn_ticker.Stop()
+				//e.test_progress_ticker.Stop()
+				//e.test_completed_ticker.Stop()
+				//e.spawn_ticker.Stop()
 			case result := <-e.ch:
 				e.execution_results.PushBack(result)
 				e.updateStats(result)
 			case <-e.quit:
 				e.current_concurrent_users--
-				if e.current_concurrent_users == 0 && test_completed == true {
+				if e.users_spawned >= e.Scenario.total_users && e.current_concurrent_users == 0 && test_completed == true {
+					e.test_progress_ticker.Stop()
+					e.test_completed_ticker.Stop()
+					e.spawn_ticker.Stop()
 					evt := e.createProgressEvent()
 					e.Quit_test <- evt
 					close(e.ch)
 					close(e.quit)
 					close(e.Quit_test)
 					close(e.External_ch)
+					return
 				}
 			default:
 				// continue
@@ -129,8 +133,7 @@ func (e *Engine) initializeTickers() {
 		float64(e.Scenario.total_users))
 	e.spawn_ticker = time.NewTicker(freq)
 	e.test_progress_ticker = time.NewTicker(e.progress_update_frequency)
-	e.test_completed_ticker = time.NewTicker(e.Scenario.test_duration *
-		time.Second)
+	e.test_completed_ticker = time.NewTicker(e.Scenario.test_duration)
 }
 
 func computeSpawnFrequency(duration float64, users float64) time.Duration {

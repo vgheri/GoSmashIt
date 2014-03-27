@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	users := 200
-	address := "http://localhost/"
+	users := 2000
+	address := "http://localhost:52086/"
 	test_duration := 60 * time.Second
 	timeout := 3000 * time.Millisecond
 	pause_duration := 3000 * time.Millisecond
@@ -16,6 +16,7 @@ func main() {
 	engine.CreateScenario(users, address, test_duration,
 		pause_duration, timeout)
 	engine.Scenario.AddStep(nil, "GET", "", "")
+	engine.Scenario.AddStep(nil, "GET", "en-US/Product/3/nexus-5", "")	
 	engine.Run()
 	for {
 		select {
@@ -44,5 +45,5 @@ func printEvent(event *engine.ProgressEvent, test_completed bool) {
 	fmt.Printf("Total hits: %d\n", event.Total_hits)
 	fmt.Printf("Total client errors: %d\n", event.Total_client_errors)
 	fmt.Printf("Total server errors: %d\n", event.Total_server_errors)
-	fmt.Printf("Total timeouts: %d\n", event.Total_timeouts)
+	fmt.Printf("Total timeouts: %d\n\n", event.Total_timeouts)
 }
